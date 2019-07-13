@@ -9,18 +9,18 @@
       element-loading-background="rgba(0, 0, 0, 0.8)"
     ></div>
 
-    <div class="qr-error" v-if="qrStage === 1">
-      <p>{{qrRequestMsg}}</p>
+    <div class="qr-error" v-else-if="qrStage === 1">
+      <p class="text">{{qrRequestMsg}}</p>
       <ElButton type="primary" @click="retry">重试</ElButton>
     </div>
 
-    <div class="qr" v-if="qrStage === 2">
+    <div class="qr" v-else-if="qrStage === 2">
       <ElRow type="flex" justify="center">
         <ElCol :span="5">
           <ElCard :body-style="{ padding : '0px'}">
             <img class="image" :src="qrUrl" />
           </ElCard>
-          <p>请扫描二维码登录</p>
+          <p class="text">请扫描二维码登录</p>
         </ElCol>
       </ElRow>
     </div>
@@ -34,7 +34,7 @@ export default {
       qrUrl:
         'https://ss0.bdstatic.com/94oJfD_bAAcT8t7mm9GUKT-xh_/timg?image&quality=100&size=b4000_4000&sec=1563029353&di=c81432783d94bd3e9b37f528a86344f0&src=http://b-ssl.duitang.com/uploads/item/201601/22/20160122003337_ZxyWu.jpeg',
       // 0 请求发送 1 请求错误 2 请求正常返回，已经获取到二维码
-      qrStage: 1,
+      qrStage: 2,
       // 请求信息
       qrRequestMsg: '请求错误'
     }
@@ -52,5 +52,8 @@ export default {
 .image {
   width: 100%;
   display: block;
+}
+.text {
+  font-size: 14px;
 }
 </style>
