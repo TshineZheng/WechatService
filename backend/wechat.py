@@ -81,7 +81,7 @@ def login_check():
     return r(data={'login': g_is_login})
 
 
-@api.route('/logout')
+@api.route('/logout', methods=["POST", "GET"])
 def logout():
     if g_is_login:
         itchat.logout()
@@ -151,6 +151,7 @@ def qr_callback(uuid, status, qrcode):
 def login_callback():
     global g_is_login
     g_is_login = True
+    log('登录成功')
     pass
 
 

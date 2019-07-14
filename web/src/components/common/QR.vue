@@ -1,27 +1,24 @@
 <template>
   <div class="qr-root">
-    <div class="qr-loading"
-         v-if="qrStage === 0"
-         v-loading="qrStage === 0"
-         element-loading-text="正在请求微信登录二维码"
-         element-loading-spinner="el-icon-loading"
-         element-loading-background="rgba(0, 0, 0, 0.8)"></div>
+    <div
+      class="qr-loading"
+      v-if="qrStage === 0"
+      v-loading="qrStage === 0"
+      element-loading-text="正在请求微信登录二维码"
+      element-loading-spinner="el-icon-loading"
+      element-loading-background="rgba(0, 0, 0, 0.8)"
+    ></div>
 
-    <div class="qr-error"
-         v-else-if="qrStage === 1">
+    <div class="qr-error" v-else-if="qrStage === 1">
       <p class="text">{{qrRequestMsg}}</p>
-      <ElButton type="primary"
-                @click="retry">重试</ElButton>
+      <ElButton type="primary" @click="retry">重试</ElButton>
     </div>
 
-    <div class="qr"
-         v-else-if="qrStage === 2">
-      <ElRow type="flex"
-             justify="center">
+    <div class="qr" v-else-if="qrStage === 2">
+      <ElRow type="flex" justify="center">
         <ElCol :span="5">
           <ElCard :body-style="{ padding : '0px'}">
-            <img class="image"
-                 :src="qrUrl" />
+            <img class="image" :src="qrUrl" />
           </ElCard>
           <p class="text">请扫描二维码登录</p>
         </ElCol>
@@ -40,7 +37,8 @@ export default {
       // 0 请求发送 1 请求错误 2 请求正常返回，已经获取到二维码
       qrStage: 0,
       // 请求信息
-      qrRequestMsg: '请求错误'
+      qrRequestMsg: '请求错误',
+      timerQR: null,
     }
   },
   methods: {
@@ -58,18 +56,29 @@ export default {
       axios.get('/api/qr/check')
         .then(res => {
           if (res.data === 'exist') {
-            clearInterval(this.timer)
+            this.checkQRTimerClose()
             console.log('qr获取到了')
             this.qrStage = 2
           } else if (res.data === 'not') {
             console.log('还没拿到继续等待')
           } else {
-            qrError(res.data)
+            this.qrError(res.data)
           }
         })
         .catch(err => {
-          qrError(err.message)
+          this.qrError(err.message)
         })
+    },
+    checkQRTimer () {
+      this.checkQRTimerClose()
+      this.timerQR = setInterval(this.checkQR, 1000)
+    }
+    ,
+    checkQRTimerClose () {
+      if (this.timerQR) {
+        clearInterval(this.timerQR)
+      }
+      this.timerQR = null
     }
   },
   created () {
@@ -77,22 +86,15 @@ export default {
     axios.get('/api/login')
       .then(res => {
         console.log(res)
+        this.checkQRTimer()
       })
       .catch(err => {
-        qrError(err.message)
+        this.qrError(err.message)
       })
-
-    if (this.timer) {
-      clearInterval(this.timer)
-    } else {
-      this.timer = setInterval(() => {
-        this.checkQR()
-      }, 1000);
-    }
   },
-  destroyed () {
-    clearInterval(this.timer)
-  },
+  beforeDestroy () {
+    this.checkQRTimerClose()
+  }
 };
 </script>
 

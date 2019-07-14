@@ -1,7 +1,16 @@
 <template>
   <div class="login">
-    <div v-if="isLogin">
-      <p>已经登录,是否退出?</p>
+    <div v-if="loginState === 0">
+      <p>正在获取登录状态</p>
+    </div>
+    <div v-else-if="loginState === 1">
+      <p>获取登录状态错误</p>
+      <p>{{msg}}</p>
+      <ElButton type="primary" @click="loginCheck">重试</ElButton>
+    </div>
+    <div v-else-if="loginState === 2">
+      <p>已经登录</p>
+      <ElButton type="primary" @click="logout">退出登录</ElButton>
     </div>
     <QR v-else></QR>
   </div>
@@ -16,19 +25,57 @@ export default {
   },
   data () {
     return {
-      isLogin: false
+      // 0 正在检测 1 检测错误 2 已登录 3 未登录
+      loginState: 0,
+      msg: '',
+      timerLogin: null,
     };
   },
   created () {
-    axios.get('/api/login/check')
-      .then(res => {
-        this.isLogin = res.data.data.login
-        console.log(res)
-      })
-      .catch(err => {
-        console.error(err);
-      })
+    this.checkLoginTimer()
   },
+  methods: {
+    loginCheck () {
+      axios.get('/api/login/check')
+        .then(res => {
+          let state = res.data.data.login ? 2 : 3
+          this.loginState = state
+          console.debug('CheckLogin oldState = ' + this.loginState +' newState = ' + state )
+        })
+        .catch(err => {
+          this.msg = err.message
+          this.loginState = 1
+          console.error(err);
+        })
+    },
+    logout () {
+      axios.post('/api/logout')
+        .then(res => {
+          console.log(res)
+        })
+        .catch(err => {
+          console.error(err);
+        })
+    },
+    retryLogin () {
+      this.loginState = 0
+      checkLoginTimer()
+    },
+    checkLoginTimer () {
+      this.checkLoginTimerClose()
+      this.timerLogin = setInterval(this.loginCheck, 1000)
+    }
+    ,
+    checkLoginTimerClose () {
+      if (this.timerLogin) {
+        clearInterval(this.timerLogin)
+      }
+      this.timerLogin = null
+    }
+  },
+  beforeDestroy () {
+    this.checkLoginTimerClose()
+  }
 };
 </script>
 
