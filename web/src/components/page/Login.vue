@@ -9,15 +9,26 @@
 
 <script>
 import QR from "@/components/common/QR.vue";
+import axios from 'axios'
 export default {
   components: {
     QR
   },
-  data() {
+  data () {
     return {
       isLogin: false
     };
-  }
+  },
+  created () {
+    axios.get('/api/login/check')
+      .then(res => {
+        this.isLogin = res.data.data.login
+        console.log(res)
+      })
+      .catch(err => {
+        console.error(err);
+      })
+  },
 };
 </script>
 
