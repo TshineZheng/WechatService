@@ -3,10 +3,21 @@ import getopt
 import json
 import os
 import sys
-from threading import Thread
+import threading
+import time
 
 import itchat
 from flask import Flask, make_response, Blueprint, Response
+
+
+class WxLoginThread(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+        self.name = 'Wx-Login-Thread'
+
+    def run(self):
+        wx_login_async()
+
 
 app = Flask(__name__)
 app.config.update(RESTFUL_JSON=dict(ensure_ascii=False))
@@ -19,12 +30,17 @@ debug = True  # 调试模式
 g_qr_relative = 'static/qr.png'  # QR 保存的相对路径
 g_qr_img_path = ''  # 二维码路径
 g_qr_status: int = -1  # 二维码获取状态
+g_qr_time = 0  # 二维码时间戳
+
 g_is_login: bool = False  # 是否是登录状态
 
+# 微信热重载
 g_wechat_hot_reload = False
 
+g_login_thread: WxLoginThread = None
 
-@api.route('/')
+
+@app.route('/')
 def hello_world():
     return 'Hello Flask!'
 
@@ -32,7 +48,6 @@ def hello_world():
 # 检测登陆状态
 @api.route('/login/check', methods=["POST", "GET"])
 def login_check():
-    # return r(data={'login': g_is_login})
     return r(data={'login': g_is_login})
 
 
@@ -45,11 +60,14 @@ def login():
 
     itchat.logout()
 
-    if os.path.exists(g_qr_img_path):
-        log('QR 图片已存在，删除')
-        os.remove(g_qr_img_path)
+    global g_login_thread
 
-    wx_login_async()
+    if g_login_thread:
+        if g_login_thread.isAlive():
+            return r(msg='微信登陆线程正在运行中')
+
+    g_login_thread = WxLoginThread()
+    g_login_thread.start()
 
     return r(msg='登陆请求已发送')
 
@@ -58,15 +76,15 @@ def login():
 @api.route('/qr/check', methods=["POST", "GET"])
 def qr_check():
     if g_qr_status is -1:
-        return r(code=201, msg='正在获取')
+        return r(code=201, msg='正在获取', data={'qr_time': g_qr_time})
 
     if g_qr_status is 0:
         if os.path.exists(g_qr_img_path):
-            return r(code=200, msg='QR已存在')
+            return r(code=200, msg='QR已存在', data={'qr_time': g_qr_time})
         else:
-            return r(code=203, msg='QR已经获取到，但文件不存在：')
+            return r(code=203, msg='QR已经获取到，但文件不存在：', data={'qr_time': g_qr_time})
 
-    return r(code=202, msg='二维码状态', data={'wechat_error_code': g_qr_status})
+    return r(code=202, msg='二维码状态', data={'wechat_error_code': g_qr_status, 'qr_time': g_qr_time})
 
 
 # 获取QR
@@ -97,8 +115,7 @@ def logout():
 @api.route('/send/<name>/<msg>')
 def send_msg(name, msg):
     if g_is_login is False:
-        if is_login() is False:
-            return r(code=204, msg='未登入')
+        return r(code=204, msg='未登入')
 
     try:
         namelist = itchat.search_friends(name=name)
@@ -123,23 +140,21 @@ def send_msg(name, msg):
 def r(status=200, code=200, data=None, msg='ok'):
     if data is None:
         data = {}
+
     return make_response(json.dumps({'code': code, 'data': data, 'msg': msg}, ensure_ascii=False), status, )
 
 
-def my_async(f):
-    def wrapper(*args, **kwargs):
-        thr = Thread(target=f, args=args, kwargs=kwargs)
-        thr.start()
-
-    return wrapper
-
-
-@my_async
 def wx_login_async():
     global g_qr_status
     g_qr_status = -1
     itchat.auto_login(hotReload=g_wechat_hot_reload, qrCallback=qr_callback, loginCallback=login_callback,
                       exitCallback=exit_callback)
+    # TODO: 这里要告诉前端，因为需要重新执行登陆逻辑了。
+    log('login thread over')
+
+
+def tick():
+    return int(round(time.time() * 1000))
 
 
 def qr_callback(uuid, status, qrcode):
@@ -147,11 +162,18 @@ def qr_callback(uuid, status, qrcode):
     global g_qr_status
     g_qr_status = int(status)
     if g_qr_status == 0:
+        log('QR 图片更新')
+        if os.path.exists(g_qr_img_path):
+            log('QR 图片已存在，删除')
+            os.remove(g_qr_img_path)
         log('开始保存QR图片 = ' + g_qr_img_path)
         f = open(g_qr_img_path, 'wb')
         f.write(qrcode)
         f.close()
         log('QR图片保存成功')
+        # 保存时间戳
+        global g_qr_time
+        g_qr_time = tick()
 
 
 def login_callback():
@@ -166,18 +188,6 @@ def exit_callback():
     g_is_login = False
     log('退出登陆')
     pass
-
-
-def is_login():
-    global g_is_login
-    status = itchat.check_login()
-    if status is 200:
-        log('已登录')
-        g_is_login = True
-        return True
-    log('未登录')
-    g_is_login = False
-    return g_is_login
 
 
 def log(msg):

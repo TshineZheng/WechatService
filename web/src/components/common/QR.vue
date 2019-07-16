@@ -53,12 +53,12 @@ import axios from 'axios'
 export default {
   data () {
     return {
-      qrUrl:
-        process.env.BASE_URL + '/qr',
+      qrUrl: process.env.BASE_URL + '/qr',
       // 0 请求发送 1 请求错误 2 请求正常返回，已经获取到二维码 3 二维码失效 4 二维码被扫 5 二维码被扫超时 6 登陆成功
       qrStage: 0,
       // 请求信息
       qrRequestMsg: '请求错误',
+      qrTimestamp: 0,
       timerQR: null,
     }
   },
@@ -89,31 +89,37 @@ export default {
       axios.get('/api/qr/check')
         .then(res => {
           console.debug(res)
+          if (this.qrTimestamp < res.data.data.qr_time) {
+            this.qrTimestamp = res.data.data.qr_time
+            // 用这种方式更新 url ，只在 url 最后加入时间，这样 vue 就会认为图片改变了，就会重新获取，而服务器不处理这个时间即可。
+            this.qrUrl = process.env.BASE_URL + '/qr?t=' + this.qrTimestamp
+            console.debug('更新QR')
+          }
+
           let code = res.data.code
           if (code === 200) {
-            console.log('二维码获取到了')
+            //console.log('二维码获取到了')
             this.qrStage = 2
           } else if (code === 201) {
             console.log('还没拿到QR继续等待')
           } else if (code == 202) {
             let wxcode = res.data.data.wechat_error_code
-            if (wxcode === 408) {
-              console.log('二维码失效')
-              this.checkQRTimerClose()
-              this.qrStage = 3
-            }
-            else if (wxcode === 201) {
+            if (wxcode === 201) {
               console.log('二维码被扫')
               this.qrStage = 4
             }
             else if (wxcode === 400) {
               console.log('二维码确认超时')
-              this.checkQRTimerClose()
+              // this.checkQRTimerClose()
               this.qrStage = 5
             } else if (wxcode === 200) {
               this.qrStage = 6
               console.log('登陆成功')
               this.checkQRTimerClose()
+            }
+            else if (wxcode === 408) {
+              console.log('二维码疑似失效')
+              this.qrStage = 3
             }
             else {
               this.qrError(res.data.msg + ' 状态码：' + res.data.data.wechat_error_code)
