@@ -51,6 +51,12 @@ def login_check():
     return r(data={'login': g_is_login})
 
 
+@api.route('/login/c', methods=["POST", "GET"])
+def login_c():
+    itchat.check_login()
+    return r()
+
+
 # 登陆
 @api.route('/login')
 def login():
@@ -64,6 +70,7 @@ def login():
 
     if g_login_thread:
         if g_login_thread.isAlive():
+            log('微信登陆线程正在运行中')
             return r(msg='微信登陆线程正在运行中')
 
     g_login_thread = WxLoginThread()
@@ -140,7 +147,6 @@ def send_msg(name, msg):
 def r(status=200, code=200, data=None, msg='ok'):
     if data is None:
         data = {}
-
     return make_response(json.dumps({'code': code, 'data': data, 'msg': msg}, ensure_ascii=False), status, )
 
 
@@ -149,12 +155,17 @@ def wx_login_async():
     g_qr_status = -1
     itchat.auto_login(hotReload=g_wechat_hot_reload, qrCallback=qr_callback, loginCallback=login_callback,
                       exitCallback=exit_callback)
-    # TODO: 这里要告诉前端，因为需要重新执行登陆逻辑了。
-    log('login thread over')
+    log('登录线程结束')
 
 
 def tick():
     return int(round(time.time() * 1000))
+
+
+def alive():
+    if g_login_thread:
+        return g_login_thread.isAlive()
+    return False
 
 
 def qr_callback(uuid, status, qrcode):

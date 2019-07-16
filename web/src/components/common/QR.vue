@@ -24,8 +24,7 @@
                  :src="qrUrl" />
           </ElCard>
 
-          <p v-if="qrStage === 2"
-             class="text">请扫描二维码登录</p>
+          <p v-if="qrStage === 2">请扫描二维码登录</p>
           <div v-else-if="qrStage === 3">
             <p>二维码失效</p>
             <ElButton type="primary"
@@ -119,7 +118,7 @@ export default {
             }
             else if (wxcode === 408) {
               console.log('二维码疑似失效')
-              this.qrStage = 3
+              //this.qrStage = 3
             }
             else {
               this.qrError(res.data.msg + ' 状态码：' + res.data.data.wechat_error_code)
