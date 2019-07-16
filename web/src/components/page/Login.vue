@@ -13,6 +13,7 @@
       <p>已经登录</p>
       <ElButton type="primary"
                 @click="logout">退出登录</ElButton>
+      <SendMessage></SendMessage>
     </div>
     <div v-else-if="loginState === 3">
       <ElButton v-show="!showQR" type="primary" @click="login">登录</ElButton>
@@ -23,6 +24,7 @@
 
 <script>
 import QR from "@/components/common/QR.vue";
+import SendMessage from "@/components/common/SendMessage"
 import axios from 'axios'
 
 var LoginState = {
@@ -34,7 +36,7 @@ var LoginState = {
 
 export default {
   components: {
-    QR
+    QR,SendMessage
   },
   data () {
     return {

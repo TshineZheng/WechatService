@@ -119,7 +119,7 @@ def logout():
 
 
 # 发送消息
-@api.route('/send/<name>/<msg>')
+@api.route('/send/<name>/<msg>', methods=["POST", "GET"])
 def send_msg(name, msg):
     if g_is_login is False:
         return r(code=204, msg='未登入')
