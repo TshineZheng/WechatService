@@ -6,7 +6,7 @@
       <div style="margin: 20px 0;"></div>
       <ElInput v-model="message" placeholder="信息" type="textarea" :autosize="{ minRows: 3}"></ElInput>
       <div style="margin: 20px 0;"></div>
-      <p>通过<span style="color: orange;">ip:port/send/{username}/{message}</span> 可直接发送消息</p>
+      <p>通过 <span style="color: orange;">backend-ip : port / send / {username} / {message}</span> 可直接发送消息</p>
       <div style="margin: 20px 0;"></div>
       <ElButton type="primary" @click="send">发送</ElButton>
     </ElCol>
