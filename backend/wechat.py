@@ -18,8 +18,10 @@ debug = True  # 调试模式
 # 全局变量
 g_qr_relative = 'static/qr.png'  # QR 保存的相对路径
 g_qr_img_path = ''  # 二维码路径
-g_qr_status = -1  # 二维码获取状态
-g_is_login = False  # 是否是登录状态
+g_qr_status: int = -1  # 二维码获取状态
+g_is_login: bool = False  # 是否是登录状态
+
+g_wechat_hot_reload = False
 
 
 @api.route('/')
@@ -27,38 +29,53 @@ def hello_world():
     return 'Hello Flask!'
 
 
+# 检测登陆状态
+@api.route('/login/check', methods=["POST", "GET"])
+def login_check():
+    # return r(data={'login': g_is_login})
+    return r(data={'login': g_is_login})
+
+
+# 登陆
 @api.route('/login')
 def login():
     if g_is_login:
-        return "已登录，如需更换账号需先登出"
+        log('已登陆，如需更换账号请先登出')
+        return r(code=201, msg='已登陆，如需更换账号请先登出')
 
     itchat.logout()
 
     if os.path.exists(g_qr_img_path):
         log('QR 图片已存在，删除')
         os.remove(g_qr_img_path)
+
     wx_login_async()
 
-    return 'send'
-    # return render_template('login_check.html')
+    return r(msg='登陆请求已发送')
 
 
+# 检测QR是否存在
 @api.route('/qr/check', methods=["POST", "GET"])
-def qr_exist():
-    if os.path.exists(g_qr_img_path):
-        return 'exist'  # 返回成功
-    elif g_qr_status is not -1:
-        return str(g_qr_status)
-    return 'not'  # 0 表示还没有返回
+def qr_check():
+    if g_qr_status is -1:
+        return r(code=201, msg='正在获取')
+
+    if g_qr_status is 0:
+        if os.path.exists(g_qr_img_path):
+            return r(code=200, msg='QR已存在')
+        else:
+            return r(code=203, msg='QR已经获取到，但文件不存在：')
+
+    return r(code=202, msg='二维码状态', data={'wechat_error_code': g_qr_status})
 
 
+# 获取QR
 @api.route('/qr')
 def login_qr_code():
     path = g_qr_img_path
     if not os.path.exists(g_qr_img_path):
+        log('QR文件不存在，使用默认图片代替')
         path = os.path.abspath(os.path.dirname(__file__)) + '/static/qr_failed.png'
-
-    log('/qr = ' + path)
 
     with open(path, 'rb') as f:
         image = f.read()
@@ -66,28 +83,17 @@ def login_qr_code():
     return Response(image, mimetype='image/png')
 
 
-@api.route('/qr/failed', methods=["POST", "GET"])
-def qr_failed():
-    return '获取微信二维码失败,错误码：' + str(g_qr_status)
-
-
-@api.route('/login/ok', methods=["POST", "GET"])
-def login_ok():
-    return '登录成功'
-
-
-@api.route('/login/check', methods=["POST", "GET"])
-def login_check():
-    return r(data={'login': g_is_login})
-
-
+# 登出
 @api.route('/logout', methods=["POST", "GET"])
 def logout():
+    global g_is_login
     if g_is_login:
+        g_is_login = False
         itchat.logout()
-    return "已登出"
+    return r(msg='已登出')
 
 
+# 发送消息
 @api.route('/send/<name>/<msg>')
 def send_msg(name, msg):
     if g_is_login is False:
@@ -132,20 +138,20 @@ def my_async(f):
 def wx_login_async():
     global g_qr_status
     g_qr_status = -1
-    itchat.auto_login(hotReload=False, qrCallback=qr_callback, loginCallback=login_callback,
+    itchat.auto_login(hotReload=g_wechat_hot_reload, qrCallback=qr_callback, loginCallback=login_callback,
                       exitCallback=exit_callback)
 
 
 def qr_callback(uuid, status, qrcode):
-    if status == '0':
+    log('从微信返回 QR 信息 ，状态：' + status)
+    global g_qr_status
+    g_qr_status = int(status)
+    if g_qr_status == 0:
         log('开始保存QR图片 = ' + g_qr_img_path)
         f = open(g_qr_img_path, 'wb')
         f.write(qrcode)
         f.close()
         log('QR图片保存成功')
-    else:
-        global g_qr_status
-        g_qr_status = status
 
 
 def login_callback():
@@ -158,6 +164,7 @@ def login_callback():
 def exit_callback():
     global g_is_login
     g_is_login = False
+    log('退出登陆')
     pass
 
 
@@ -210,7 +217,6 @@ def main(argv):
 
 # 必须得放在 route 定义之后注册
 app.register_blueprint(api)
-
 
 if __name__ == '__main__':
     main(sys.argv[1:])

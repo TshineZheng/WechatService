@@ -6,13 +6,17 @@
     <div v-else-if="loginState === 1">
       <p>获取登录状态错误</p>
       <p>{{msg}}</p>
-      <ElButton type="primary" @click="loginCheck">重试</ElButton>
+      <ElButton type="primary"
+                @click="retryLoginCheck">重试</ElButton>
     </div>
     <div v-else-if="loginState === 2">
       <p>已经登录</p>
-      <ElButton type="primary" @click="logout">退出登录</ElButton>
+      <ElButton type="primary"
+                @click="logout">退出登录</ElButton>
     </div>
-    <QR v-else></QR>
+    <div v-else>
+      <QR></QR>
+    </div>
   </div>
 </template>
 
@@ -40,11 +44,12 @@ export default {
         .then(res => {
           let state = res.data.data.login ? 2 : 3
           this.loginState = state
-          console.debug('CheckLogin oldState = ' + this.loginState +' newState = ' + state )
+          console.debug('CheckLogin oldState = ' + this.loginState + ' newState = ' + state)
         })
         .catch(err => {
           this.msg = err.message
           this.loginState = 1
+          this.checkLoginTimerClose()
           console.error(err);
         })
     },
@@ -57,11 +62,11 @@ export default {
           console.error(err);
         })
     },
-    retryLogin () {
-      this.loginState = 0
-      checkLoginTimer()
+    retryLoginCheck () {
+      this.checkLoginTimer()
     },
     checkLoginTimer () {
+      this.loginState = 0
       this.checkLoginTimerClose()
       this.timerLogin = setInterval(this.loginCheck, 1000)
     }
