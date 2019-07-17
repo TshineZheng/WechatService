@@ -22,3 +22,7 @@ backend 和 web 部署完毕后，浏览器访问 web 所在的地址即可，do
 
 > docker-compose 配置了 nginx 反代所有 `/api` 开头的请求到 backend， 所以可以直接通过 web 所在的地址访问 backend，比如：[localhost:9910/api/send/特困生/好困啊](http://localhost:9910/api/send/特困生/好困啊)
 > backend 默认端口是 6637
+
+# Ref
+Backend：itchat、flask、etc
+Web：Vue、etc
