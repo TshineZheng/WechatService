@@ -24,5 +24,5 @@ backend 和 web 部署完毕后，浏览器访问 web 所在的地址即可，do
 > backend 默认端口是 6637
 
 # Ref
-Backend：itchat、flask、etc
+Backend：itchat、flask、etc  
 Web：Vue、etc
