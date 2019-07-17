@@ -8,6 +8,7 @@ import time
 
 import itchat
 from flask import Flask, make_response, Blueprint, Response
+from flask_cors import CORS
 
 
 class WxLoginThread(threading.Thread):
@@ -20,11 +21,14 @@ class WxLoginThread(threading.Thread):
 
 
 app = Flask(__name__)
+
+CORS(app, supports_credentials=True)
+
 app.config.update(RESTFUL_JSON=dict(ensure_ascii=False))
 
 api = Blueprint('api', __name__, url_prefix='/api')
 
-debug = True  # 调试模式
+debug = False  # 调试模式
 
 # 全局变量
 g_qr_relative = 'static/qr.png'  # QR 保存的相对路径
@@ -203,13 +207,22 @@ def exit_callback():
 
 def log(msg):
     if debug:
-        print(msg)
+        app.logger(msg)
 
 
 def usage():
     print('''
 --debug         是否打印日志
 ''')
+
+
+def init():
+    img_folder = os.path.abspath(os.path.dirname(__file__))
+
+    global g_qr_img_path
+    g_qr_img_path = img_folder + "/" + g_qr_relative
+
+    log("二维码路径  {p}".format(p=g_qr_img_path))
 
 
 def main(argv):
@@ -226,18 +239,13 @@ def main(argv):
             global debug
             debug = True
 
-    img_folder = os.path.abspath(os.path.dirname(__file__))
-
-    global g_qr_img_path
-    g_qr_img_path = img_folder + "/" + g_qr_relative
-
-    log("二维码路径  {p}".format(p=g_qr_img_path))
-
-    app.run(port=6637, debug=debug)  # 设置debug=True是为了让代码修改实时生效，而不用每次重启加载
+    app.run(port=6637, debug=debug, host='0.0.0.0')  # 设置debug=True是为了让代码修改实时生效，而不用每次重启加载
 
 
 # 必须得放在 route 定义之后注册
 app.register_blueprint(api)
+
+init()
 
 if __name__ == '__main__':
     main(sys.argv[1:])
