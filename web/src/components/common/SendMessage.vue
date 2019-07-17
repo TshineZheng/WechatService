@@ -45,7 +45,9 @@ export default {
         return
       }
 
-      axios.post('/api/send/' + this.username + '/' + this.message)
+      let body = {'username': this.username, 'message': this.message}
+
+      axios.post('/api/send', body)
         .then(res => {
           let code = res.data.code
           if (code === 200) {
