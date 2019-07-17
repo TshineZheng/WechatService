@@ -24,9 +24,11 @@
                  :src="qrUrl" />
           </ElCard>
 
-          <p v-if="qrStage === 2">请扫描二维码登录</p>
+          <div v-if="qrStage === 2">
+            <p>请扫描二维码登录</p>
+          </div>
           <div v-else-if="qrStage === 3">
-            <p>二维码失效</p>
+            <p>二维码疑似失效</p>
             <ElButton type="primary"
                       @click="retry">刷新</ElButton>
           </div>
