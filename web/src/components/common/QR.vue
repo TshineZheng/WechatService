@@ -52,7 +52,7 @@ import axios from 'axios'
 export default {
   data () {
     return {
-      qrUrl: process.env.BASE_URL + '/qr',
+      qrUrl: '/api/qr',
       // 0 请求发送 1 请求错误 2 请求正常返回，已经获取到二维码 3 二维码失效 4 二维码被扫 5 二维码被扫超时 6 登陆成功
       qrStage: 0,
       // 请求信息
@@ -91,7 +91,7 @@ export default {
           if (this.qrTimestamp < res.data.data.qr_time) {
             this.qrTimestamp = res.data.data.qr_time
             // 用这种方式更新 url ，只在 url 最后加入时间，这样 vue 就会认为图片改变了，就会重新获取，而服务器不处理这个时间即可。
-            this.qrUrl = process.env.BASE_URL + '/qr?t=' + this.qrTimestamp
+            this.qrUrl = '/api/qr?t=' + this.qrTimestamp
             console.debug('更新QR')
           }
 
@@ -118,6 +118,7 @@ export default {
             }
             else if (wxcode === 408) {
               console.log('二维码疑似失效')
+              this.qrStage = 2
               //this.qrStage = 3
             }
             else {
