@@ -1,8 +1,9 @@
 # 部署
-- DOCKER
+两种方式
+- DOCKER 方式
 根目录执行 `docker-compose up --build` ，需要后台执行的话加上 `-d` 选项。
 
-- 本地
+- 手动
 	- backend
 		确保 `requirements.txt` 中的依赖已安装（主要是 flask 和 itchat），运行 `python wechat.py` 即可。
 	- web
