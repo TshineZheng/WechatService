@@ -1,0 +1,4 @@
+wechat:
+  build: .
+  ports: 
+    - "6637:6637"

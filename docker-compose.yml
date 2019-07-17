@@ -1,0 +1,28 @@
+version: '2'
+
+services: 
+  wechat:
+    build: ./backend/
+    ports: 
+      - "6637:6637"
+    networks:
+        vpcbr:
+          ipv4_address: 10.5.0.2
+
+  web:
+    build: ./web/
+    ports:
+      - "8080:80"
+    depends_on: 
+      - wechat
+    networks:
+        vpcbr:
+          ipv4_address: 10.5.0.3
+
+networks:
+  vpcbr:
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 10.5.0.0/16
+         gateway: 10.5.0.1
