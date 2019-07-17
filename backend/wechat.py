@@ -7,7 +7,7 @@ import threading
 import time
 
 import itchat
-from flask import Flask, make_response, Blueprint, Response
+from flask import Flask, make_response, Blueprint, Response, request
 from flask_cors import CORS
 
 
@@ -123,10 +123,15 @@ def logout():
 
 
 # 发送消息
-@api.route('/send/<name>/<msg>', methods=["POST", "GET"])
-def send_msg(name, msg):
+@api.route('/send', methods=["POST"])
+def send_msg():
     if g_is_login is False:
         return r(code=204, msg='未登入')
+
+    body = request.json
+
+    name = body['username']
+    msg = body['message']
 
     try:
         namelist = itchat.search_friends(name=name)
@@ -207,7 +212,7 @@ def exit_callback():
 
 def log(msg):
     if debug:
-        app.logger(msg)
+        app.logger.debug(msg)
 
 
 def usage():
