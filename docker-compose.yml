@@ -12,7 +12,7 @@ services:
   web:
     build: ./web/
     ports:
-      - "8080:80"
+      - "9910:80"
     depends_on: 
       - wechat
     networks:
