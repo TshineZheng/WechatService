@@ -55,6 +55,7 @@ def login_check():
     return r(data={'login': g_is_login})
 
 
+# 该方法不要调用，会导致退出登录
 @api.route('/login/c', methods=["POST", "GET"])
 def login_c():
     itchat.check_login()
@@ -128,7 +129,8 @@ def send_msg():
     if g_is_login is False:
         return r(code=204, msg='未登入')
 
-    body = request.json
+    # 忽略 Content-Type
+    body = request.get_json(force=True)
 
     name = body['username']
     msg = body['message']
