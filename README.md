@@ -8,6 +8,13 @@
 3. 浏览器访问 [localhost:9910](http://localhost:9910)  
 4. 点击登陆，打开手机微信扫码登入即可。  
 
+>现在你可以在网页上给微信联系人发送消息。  
+>也可以通过发送 post 请求发送消息。  
+>
+>```bash
+>curl -X POST -d '{"username":"秦始皇","message":"打钱"}' http://localhost:9910/api/send
+>```
+
 # 部署
 两种方式  
 - DOCKER 方式  
@@ -24,14 +31,17 @@ backend 和 web 部署完毕后，浏览器访问 web 所在的地址即可，do
 
 # API  
 
-| 功能     | 请求                      | 方式 | Body                                      | 备注 |
-| -------- | ------------------------- | ---- | ----------------------------------------- | ---- |
-| 发送消息 | {Backend}/api/send        | Post | {"username": "秦始皇", "message": "打钱"} |      |
-| 登陆     | {Backend}/api/login       |      |                                           |      |
-| 登陆检测 | {Backend}/api/login/check |      |                                           |      |
+| 功能       | 请求                              | Body                                      | 备注       |
+| ---------- | --------------------------------- | ----------------------------------------- | ---------- |
+| 发送消息   | **POST** {Backend}/api/send       | {"username": "秦始皇", "message": "打钱"} |            |
+| 登陆       | **GET** {Backend}/api/login       |                                           |            |
+| 登陆检测   | **GET** {Backend}/api/login/check |                                           |            |
+| 检测QR状态 | **GET** {Backend}/api/qr/check    |                                           |            |
+| 获取QR图片 | **GET** {Backend}/api/qr          |                                           | 会不时刷新 |
+| 登出       | **GET** {Backend}/api/logout      |                                           |            |
 
-> docker-compose 配置了 nginx 反代所有 `/api` 开头的请求到 backend， 所以可以直接通过 web 所在的地址访问 backend，比如：[localhost:9910/api/login](http://localhost:9910/api/login)  
-> backend 默认端口是 6637
+> docker-compose 配置了 nginx 反代所有 `/api` 开头的请求到 backend， 所以可以直接通过 web 所在的地址访问 backend。  
+> 比如：[localhost:9910/api/login](http://localhost:9910/api/login)  对应的 backend 为：[localhost:6637/api/login](http://localhost:6637/api/login)
 
 # Ref
 Backend：itchat、flask、etc  
